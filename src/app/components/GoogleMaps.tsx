@@ -158,9 +158,9 @@ export default function GoogleMaps() {
       }
     });
 
-    newSocket.on("userList", (userList) => {
+    newSocket.on("userList", (userList: { id: string; location: { lat: number; lng: number } }[]) => {
       if (mapInstance.current) {
-        userList.forEach((user , index) => {
+        userList.forEach((user: { id: string; location: { lat: number; lng: number } }, index) => {
           const adjustedLocation = adjustCoordinates(user.location.lat, user.location.lng, index);
           if (userMarkers.current[user.id]) {
             userMarkers.current[user.id].setPosition(adjustedLocation);
@@ -174,13 +174,6 @@ export default function GoogleMaps() {
                 scaledSize: new window.google.maps.Size(40, 40),
               },
             });
-          }
-        });
-
-        Object.keys(userMarkers.current).forEach((id) => {
-          if (!userList.find((user) => user.id === id)) {
-            userMarkers.current[id].setMap(null);
-            delete userMarkers.current[id];
           }
         });
       }
