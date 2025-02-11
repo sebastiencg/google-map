@@ -182,6 +182,7 @@ export default function GoogleMaps() {
   return (
     <div className="p-4">
       <div className="flex items-center justify-between mb-4">
+        {/* eslint-disable-next-line react/no-unescaped-entities */}
         <h1 className="text-2xl font-bold">Carte en temps réel et calcul d'itinéraire</h1>
         <button
           onClick={() => setShowInputs(!showInputs)}
@@ -237,6 +238,7 @@ export default function GoogleMaps() {
 
           {showRouteButton && (
             <button onClick={calculateRoute} className="bg-green-500 text-white p-3 rounded-lg w-full">
+              {/* eslint-disable-next-line react/no-unescaped-entities */}
               Afficher l'itinéraire
             </button>
           )}
@@ -247,3 +249,4 @@ export default function GoogleMaps() {
     </div>
   );
 }
+
