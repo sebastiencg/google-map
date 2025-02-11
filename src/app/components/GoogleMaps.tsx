@@ -147,7 +147,11 @@ export default function GoogleMaps() {
     //const newSocket = io("http://localhost:4000/");
     newSocket.on("connect", () => {
       console.log("Connecté à Socket.IO :", newSocket.id);
-      currentUserId.current = newSocket.id;
+      if (newSocket.id) {
+        currentUserId.current = newSocket.id;
+      } else {
+        currentUserId.current = null;
+      }
 
       if (userLocation) {
         newSocket.emit("location", { location: userLocation });
@@ -156,7 +160,7 @@ export default function GoogleMaps() {
 
     newSocket.on("userList", (userList) => {
       if (mapInstance.current) {
-        userList.forEach((user, index) => {
+        userList.forEach((user , index) => {
           const adjustedLocation = adjustCoordinates(user.location.lat, user.location.lng, index);
           if (userMarkers.current[user.id]) {
             userMarkers.current[user.id].setPosition(adjustedLocation);
