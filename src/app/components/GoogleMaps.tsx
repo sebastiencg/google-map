@@ -1,6 +1,7 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-import { Loader } from "@googlemaps/js-api-loader";
+import {useEffect, useRef, useState} from "react";
+import {Loader} from "@googlemaps/js-api-loader";
+import {FaBicycle, FaCar, FaWalking} from "react-icons/fa";
 
 export default function GoogleMaps() {
   const mapRef = useRef<HTMLDivElement>(null);
@@ -15,6 +16,7 @@ export default function GoogleMaps() {
   const [addressStart, setAddressStart] = useState("");
   const [addressDestination, setAddressDestination] = useState("");
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [travelMode, setTravelMode] = useState<string>("DRIVING"); // On utilise une chaîne de caractères ici
 
   const initializeMap = async (lat: number, lng: number) => {
     try {
@@ -25,21 +27,21 @@ export default function GoogleMaps() {
 
       await loader.load();
 
-      if (mapRef.current) {
-        const map = new google.maps.Map(mapRef.current, {
-          center: { lat, lng },
+      if (mapRef.current && window.google) {
+        const map = new window.google.maps.Map(mapRef.current, {
+          center: {lat, lng},
           zoom: 14,
         });
 
         mapInstance.current = map;
-        markerStartRef.current = new google.maps.Marker({
-          position: { lat, lng },
+        markerStartRef.current = new window.google.maps.Marker({
+          position: {lat, lng},
           map,
           title: "Votre position",
         });
 
-        directionsServiceRef.current = new google.maps.DirectionsService();
-        directionsRendererRef.current = new google.maps.DirectionsRenderer();
+        directionsServiceRef.current = new window.google.maps.DirectionsService();
+        directionsRendererRef.current = new window.google.maps.DirectionsRenderer();
         directionsRendererRef.current.setMap(map);
       }
     } catch (error) {
@@ -51,8 +53,8 @@ export default function GoogleMaps() {
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const { latitude, longitude } = position.coords;
-          setUserLocation({ lat: latitude, lng: longitude });
+          const {latitude, longitude} = position.coords;
+          setUserLocation({lat: latitude, lng: longitude});
           initializeMap(latitude, longitude);
         },
         () => {
@@ -65,7 +67,7 @@ export default function GoogleMaps() {
   }, []);
 
   const handleSearch = async (address: string, isStart: boolean) => {
-    if (!address || !mapInstance.current) return;
+    if (!address || !mapInstance.current || !window.google) return;
 
     try {
       const response = await fetch(
@@ -76,21 +78,28 @@ export default function GoogleMaps() {
       const data = await response.json();
 
       if (data.status === "OK") {
-        const { lat, lng } = data.results[0].geometry.location;
+        const {lat, lng} = data.results[0].geometry.location;
 
-        mapInstance.current.setCenter({ lat, lng });
+        mapInstance.current.setCenter({lat, lng});
 
         if (isStart) {
-          if (markerStartRef.current) markerStartRef.current.setPosition({ lat, lng });
-          else markerStartRef.current = new google.maps.Marker({ position: { lat, lng }, map: mapInstance.current, title: "Départ" });
+          if (markerStartRef.current) markerStartRef.current.setPosition({lat, lng});
+          else markerStartRef.current = new window.google.maps.Marker({
+            position: {lat, lng},
+            map: mapInstance.current,
+            title: "Départ"
+          });
           setAddressStart(address);
         } else {
-          if (markerDestinationRef.current) markerDestinationRef.current.setPosition({ lat, lng });
-          else markerDestinationRef.current = new google.maps.Marker({ position: { lat, lng }, map: mapInstance.current, title: "Destination" });
+          if (markerDestinationRef.current) markerDestinationRef.current.setPosition({lat, lng});
+          else markerDestinationRef.current = new window.google.maps.Marker({
+            position: {lat, lng},
+            map: mapInstance.current,
+            title: "Destination"
+          });
           setAddressDestination(address);
         }
 
-        // Vérifie si les deux adresses sont présentes pour afficher le bouton "Afficher l'itinéraire"
         if (addressStart && addressDestination) {
           setShowRouteButton(true);
         }
@@ -103,12 +112,12 @@ export default function GoogleMaps() {
   };
 
   const calculateRoute = async () => {
-    if (!addressStart || !addressDestination || !directionsServiceRef.current || !directionsRendererRef.current) return;
+    if (!addressStart || !addressDestination || !directionsServiceRef.current || !directionsRendererRef.current || !window.google) return;
 
     const request = {
       origin: addressStart === "Ma position" ? userLocation : addressStart,
       destination: addressDestination === "Ma position" ? userLocation : addressDestination,
-      travelMode: google.maps.TravelMode.DRIVING,
+      travelMode: window.google.maps.TravelMode[travelMode as keyof typeof google.maps.TravelMode], // Conversion en mode de transport
     };
 
     directionsServiceRef.current.route(request, (result, status) => {
@@ -152,13 +161,40 @@ export default function GoogleMaps() {
               placeholder="Entrez l'adresse de destination..."
               className="border border-gray-300 p-2 w-full rounded-lg"
             />
-            <button onClick={() => handleSearch(addressDestination, false)} className="bg-blue-500 text-white p-2 rounded-lg">
+            <button onClick={() => handleSearch(addressDestination, false)}
+                    className="bg-blue-500 text-white p-2 rounded-lg">
               Rechercher
             </button>
           </div>
 
           {showRouteButton && (
-            <button onClick={calculateRoute} className="bg-green-400 text-white p-3 m-4 rounded-lg w-full">
+            <div className="flex justify-around my-4">
+              <button
+                onClick={() => setTravelMode("DRIVING")}
+                className={`p-3 rounded-lg ${travelMode === "DRIVING" ? "bg-red-500" : "bg-gray-300"} text-white`}
+              >
+                <FaCar size={20} className="inline-block mr-2"/>
+                Voiture
+              </button>
+              <button
+                onClick={() => setTravelMode("BICYCLING")}
+                className={`p-3 rounded-lg ${travelMode === "BICYCLING" ? "bg-red-500" : "bg-gray-300"} text-white`}
+              >
+                <FaBicycle size={20} className="inline-block mr-2"/>
+                Vélo
+              </button>
+              <button
+                onClick={() => setTravelMode("WALKING")}
+                className={`p-3 rounded-lg ${travelMode === "WALKING" ? "bg-red-500" : "bg-gray-300"} text-white`}
+              >
+                <FaWalking size={20} className="inline-block mr-2"/>
+                Marche
+              </button>
+            </div>
+          )}
+
+          {showRouteButton && (
+            <button onClick={calculateRoute} className="bg-green-500 text-white p-3 m-4 rounded-lg w-full">
               Afficher l'itinéraire
             </button>
           )}
