@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "concurrently \"node server/server.js \" next dev --turbopack",
-    "dev-https": "concurrently \"node server/https-server.js\" \"npx next dev --experimental-https --port 3000\"",
+    "prod": "concurrently \"node server/server.js\" \"next start\"",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
