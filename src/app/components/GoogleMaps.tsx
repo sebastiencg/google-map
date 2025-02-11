@@ -139,7 +139,6 @@ export default function GoogleMaps() {
 
     newSocket.on("connect", () => {
       console.log("Connecté à Socket.IO :", newSocket.id);
-      // @ts-ignore
       currentUserId.current = newSocket.id;
 
       if (userLocation) {
