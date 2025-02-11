@@ -148,7 +148,7 @@ export default function GoogleMaps() {
 
     newSocket.on("userList", (userList) => {
       if (mapInstance.current) {
-        userList.forEach((user, index) => {
+        userList.forEach((user: { location: { lat: number; lng: number; }; id: string | number; }, index: number) => {
           const adjustedLocation = adjustCoordinates(user.location.lat, user.location.lng, index);
           if (userMarkers.current[user.id]) {
             userMarkers.current[user.id].setPosition(adjustedLocation);
