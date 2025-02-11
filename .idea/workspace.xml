@@ -4,9 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="8bb895fa-e9a3-41b1-baa7-6f9137ecd78d" name="Changes" comment="projet google map">
-      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
-    </list>
+    <list default="true" id="8bb895fa-e9a3-41b1-baa7-6f9137ecd78d" name="Changes" comment="projet google map" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -146,7 +144,7 @@
       <workItem from="1738666766287" duration="3922000" />
       <workItem from="1738675246242" duration="9631000" />
       <workItem from="1738746137208" duration="38000" />
-      <workItem from="1739261847715" duration="18891000" />
+      <workItem from="1739261847715" duration="19221000" />
     </task>
     <task id="LOCAL-00001" summary="projet giigle map">
       <option name="closed" value="true" />
@@ -180,7 +178,15 @@
       <option name="project" value="LOCAL" />
       <updated>1739285495375</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="projet google map">
+      <option name="closed" value="true" />
+      <created>1739285713078</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1739285713078</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

@@ -135,7 +135,7 @@ export default function GoogleMaps() {
   };
 
   useEffect(() => {
-    const newSocket = io("http://localhost:4000");
+    const newSocket = io("https://https://google-map.miantsebastien.com/");
 
     newSocket.on("connect", () => {
       console.log("Connecté à Socket.IO :", newSocket.id);
