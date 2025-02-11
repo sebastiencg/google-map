@@ -149,7 +149,7 @@ export default function GoogleMaps() {
       console.log("Connecté à Socket.IO :", newSocket.id);
       currentUserId.current = newSocket.id;
 
-      if (userLocation) {google-map.miantsebastien.com
+      if (userLocation) {
         newSocket.emit("location", { location: userLocation });
       }
     });
