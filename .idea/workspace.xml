@@ -5,13 +5,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="8bb895fa-e9a3-41b1-baa7-6f9137ecd78d" name="Changes" comment="projet google map">
-      <change afterPath="$PROJECT_DIR$/src/app/api/socket.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/app/test/page.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/server/https-server.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/server/server.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/api/socket.js" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/app/components/GoogleMaps.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/components/GoogleMaps.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/localisation/page.tsx" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -21,8 +22,8 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
-        <option value="JavaScript File" />
         <option value="TypeScript JSX File" />
+        <option value="JavaScript File" />
       </list>
     </option>
   </component>
@@ -62,12 +63,13 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
     "git-widget-placeholder": "main",
-    "last_opened_file_path": "/home/sebastien/WebstormProjects",
+    "last_opened_file_path": "/home/sebastien/WebstormProjects/google-map/server",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
+    "npm.dev-https.executor": "Run",
     "npm.dev.executor": "Run",
     "npm.start.executor": "Run",
     "ts.external.directory.path": "/home/sebastien/WebstormProjects/google-map/node_modules/typescript/lib",
@@ -84,12 +86,26 @@
     </option>
   </component>
   <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/server" />
+    </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/src/pages" />
       <recent name="$PROJECT_DIR$/src/app/api" />
       <recent name="$PROJECT_DIR$/src/app/api/place" />
     </key>
   </component>
   <component name="RunManager" selected="npm.dev">
+    <configuration name="dev-https" type="js.build_tools.npm" temporary="true" nameIsGenerated="true">
+      <package-json value="$PROJECT_DIR$/package.json" />
+      <command value="run" />
+      <scripts>
+        <script value="dev-https" />
+      </scripts>
+      <node-interpreter value="project" />
+      <envs />
+      <method v="2" />
+    </configuration>
     <configuration name="dev" type="js.build_tools.npm" temporary="true" nameIsGenerated="true">
       <package-json value="$PROJECT_DIR$/package.json" />
       <command value="run" />
@@ -113,6 +129,7 @@
     <recent_temporary>
       <list>
         <item itemvalue="npm.dev" />
+        <item itemvalue="npm.dev-https" />
         <item itemvalue="npm.start" />
       </list>
     </recent_temporary>
@@ -136,7 +153,7 @@
       <workItem from="1738666766287" duration="3922000" />
       <workItem from="1738675246242" duration="9631000" />
       <workItem from="1738746137208" duration="38000" />
-      <workItem from="1739261847715" duration="9277000" />
+      <workItem from="1739261847715" duration="18578000" />
     </task>
     <task id="LOCAL-00001" summary="projet giigle map">
       <option name="closed" value="true" />
@@ -154,7 +171,15 @@
       <option name="project" value="LOCAL" />
       <updated>1739266483582</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="projet google map">
+      <option name="closed" value="true" />
+      <created>1739275807102</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1739275807102</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

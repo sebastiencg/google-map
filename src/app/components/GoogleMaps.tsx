@@ -1,22 +1,25 @@
 "use client";
-import {useEffect, useRef, useState} from "react";
-import {Loader} from "@googlemaps/js-api-loader";
-import {FaBicycle, FaCar, FaWalking} from "react-icons/fa";
+import { useEffect, useRef, useState } from "react";
+import { Loader } from "@googlemaps/js-api-loader";
+import { FaBicycle, FaCar, FaWalking } from "react-icons/fa";
+import { io } from "socket.io-client";
 
 export default function GoogleMaps() {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<google.maps.Map | null>(null);
+  const userMarkers = useRef<{ [id: string]: google.maps.Marker }>({});
   const markerStartRef = useRef<google.maps.Marker | null>(null);
   const markerDestinationRef = useRef<google.maps.Marker | null>(null);
   const directionsServiceRef = useRef<google.maps.DirectionsService | null>(null);
   const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
+  const currentUserId = useRef<string | null>(null);
 
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [showInputs, setShowInputs] = useState(false);
   const [showRouteButton, setShowRouteButton] = useState(false);
   const [addressStart, setAddressStart] = useState("");
   const [addressDestination, setAddressDestination] = useState("");
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [travelMode, setTravelMode] = useState<string>("DRIVING"); // On utilise une chaîne de caractères ici
+  const [travelMode, setTravelMode] = useState<string>("DRIVING");
 
   const initializeMap = async (lat: number, lng: number) => {
     try {
@@ -29,16 +32,11 @@ export default function GoogleMaps() {
 
       if (mapRef.current && window.google) {
         const map = new window.google.maps.Map(mapRef.current, {
-          center: {lat, lng},
+          center: { lat, lng },
           zoom: 14,
         });
 
         mapInstance.current = map;
-        markerStartRef.current = new window.google.maps.Marker({
-          position: {lat, lng},
-          map,
-          title: "Votre position",
-        });
 
         directionsServiceRef.current = new window.google.maps.DirectionsService();
         directionsRendererRef.current = new window.google.maps.DirectionsRenderer();
@@ -53,8 +51,8 @@ export default function GoogleMaps() {
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const {latitude, longitude} = position.coords;
-          setUserLocation({lat: latitude, lng: longitude});
+          const { latitude, longitude } = position.coords;
+          setUserLocation({ lat: latitude, lng: longitude });
           initializeMap(latitude, longitude);
         },
         () => {
@@ -78,25 +76,27 @@ export default function GoogleMaps() {
       const data = await response.json();
 
       if (data.status === "OK") {
-        const {lat, lng} = data.results[0].geometry.location;
+        const { lat, lng } = data.results[0].geometry.location;
 
-        mapInstance.current.setCenter({lat, lng});
+        mapInstance.current.setCenter({ lat, lng });
 
         if (isStart) {
-          if (markerStartRef.current) markerStartRef.current.setPosition({lat, lng});
-          else markerStartRef.current = new window.google.maps.Marker({
-            position: {lat, lng},
-            map: mapInstance.current,
-            title: "Départ"
-          });
+          if (markerStartRef.current) markerStartRef.current.setPosition({ lat, lng });
+          else
+            markerStartRef.current = new window.google.maps.Marker({
+              position: { lat, lng },
+              map: mapInstance.current,
+              title: "Départ",
+            });
           setAddressStart(address);
         } else {
-          if (markerDestinationRef.current) markerDestinationRef.current.setPosition({lat, lng});
-          else markerDestinationRef.current = new window.google.maps.Marker({
-            position: {lat, lng},
-            map: mapInstance.current,
-            title: "Destination"
-          });
+          if (markerDestinationRef.current) markerDestinationRef.current.setPosition({ lat, lng });
+          else
+            markerDestinationRef.current = new window.google.maps.Marker({
+              position: { lat, lng },
+              map: mapInstance.current,
+              title: "Destination",
+            });
           setAddressDestination(address);
         }
 
@@ -112,12 +112,12 @@ export default function GoogleMaps() {
   };
 
   const calculateRoute = async () => {
-    if (!addressStart || !addressDestination || !directionsServiceRef.current || !directionsRendererRef.current || !window.google) return;
+    if (!addressStart || !addressDestination || !directionsServiceRef.current || !directionsRendererRef.current) return;
 
     const request = {
       origin: addressStart === "Ma position" ? userLocation : addressStart,
       destination: addressDestination === "Ma position" ? userLocation : addressDestination,
-      travelMode: window.google.maps.TravelMode[travelMode as keyof typeof google.maps.TravelMode], // Conversion en mode de transport
+      travelMode: window.google.maps.TravelMode[travelMode as keyof typeof google.maps.TravelMode],
     };
 
     directionsServiceRef.current.route(request, (result, status) => {
@@ -129,18 +129,73 @@ export default function GoogleMaps() {
     });
   };
 
+  const adjustCoordinates = (lat: number, lng: number, index: number) => {
+    const offset = 0.00005 * index;
+    return { lat: lat + offset, lng: lng + offset };
+  };
+
+  useEffect(() => {
+    const newSocket = io("http://localhost:4000");
+
+    newSocket.on("connect", () => {
+      console.log("Connecté à Socket.IO :", newSocket.id);
+      currentUserId.current = newSocket.id;
+
+      if (userLocation) {
+        newSocket.emit("location", { location: userLocation });
+      }
+    });
+
+    newSocket.on("userList", (userList) => {
+      if (mapInstance.current) {
+        userList.forEach((user, index) => {
+          const adjustedLocation = adjustCoordinates(user.location.lat, user.location.lng, index);
+          if (userMarkers.current[user.id]) {
+            userMarkers.current[user.id].setPosition(adjustedLocation);
+          } else {
+            userMarkers.current[user.id] = new window.google.maps.Marker({
+              position: adjustedLocation,
+              map: mapInstance.current,
+              title: `Utilisateur ${user.id}`,
+              icon: {
+                url: "https://cdn-icons-png.flaticon.com/512/1946/1946429.png",
+                scaledSize: new window.google.maps.Size(40, 40),
+              },
+            });
+          }
+        });
+
+        Object.keys(userMarkers.current).forEach((id) => {
+          if (!userList.find((user) => user.id === id)) {
+            userMarkers.current[id].setMap(null);
+            delete userMarkers.current[id];
+          }
+        });
+      }
+    });
+
+    return () => {
+      newSocket.close();
+    };
+  }, [userLocation]);
+
   return (
-    <div>
-      <button
-        onClick={() => setShowInputs(!showInputs)}
-        className="bg-gray-700 text-white p-3 m-4 rounded-lg"
-      >
-        {showInputs ? "Masquer" : "Afficher"} les champs d'adresse
-      </button>
+    <div className="p-4">
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-2xl font-bold">Carte en temps réel et calcul d'itinéraire</h1>
+        <button
+          onClick={() => setShowInputs(!showInputs)}
+          className="bg-pink-500 text-white p-3 rounded-lg mb-4"
+        >
+          {showInputs ? "Masquer les champs d'adresse" : "Afficher les champs d'adresse"}
+        </button>
+      </div>
+
+
 
       {showInputs && (
-        <div>
-          <div className="flex gap-2 p-4">
+        <div className="space-y-4">
+          <div className="flex gap-2">
             <input
               type="text"
               value={addressStart}
@@ -153,7 +208,7 @@ export default function GoogleMaps() {
             </button>
           </div>
 
-          <div className="flex gap-2 p-4">
+          <div className="flex gap-2">
             <input
               type="text"
               value={addressDestination}
@@ -161,47 +216,34 @@ export default function GoogleMaps() {
               placeholder="Entrez l'adresse de destination..."
               className="border border-gray-300 p-2 w-full rounded-lg"
             />
-            <button onClick={() => handleSearch(addressDestination, false)}
-                    className="bg-blue-500 text-white p-2 rounded-lg">
+            <button onClick={() => handleSearch(addressDestination, false)} className="bg-blue-500 text-white p-2 rounded-lg">
               Rechercher
             </button>
           </div>
 
           {showRouteButton && (
             <div className="flex justify-around my-4">
-              <button
-                onClick={() => setTravelMode("DRIVING")}
-                className={`p-3 rounded-lg ${travelMode === "DRIVING" ? "bg-red-500" : "bg-gray-300"} text-white`}
-              >
-                <FaCar size={20} className="inline-block mr-2"/>
-                Voiture
+              <button onClick={() => setTravelMode("DRIVING")} className={`p-3 rounded-lg ${travelMode === "DRIVING" ? "bg-red-500" : "bg-gray-300"} text-white`}>
+                <FaCar size={20} className="inline-block mr-2" /> Voiture
               </button>
-              <button
-                onClick={() => setTravelMode("BICYCLING")}
-                className={`p-3 rounded-lg ${travelMode === "BICYCLING" ? "bg-red-500" : "bg-gray-300"} text-white`}
-              >
-                <FaBicycle size={20} className="inline-block mr-2"/>
-                Vélo
+              <button onClick={() => setTravelMode("BICYCLING")} className={`p-3 rounded-lg ${travelMode === "BICYCLING" ? "bg-red-500" : "bg-gray-300"} text-white`}>
+                <FaBicycle size={20} className="inline-block mr-2" /> Vélo
               </button>
-              <button
-                onClick={() => setTravelMode("WALKING")}
-                className={`p-3 rounded-lg ${travelMode === "WALKING" ? "bg-red-500" : "bg-gray-300"} text-white`}
-              >
-                <FaWalking size={20} className="inline-block mr-2"/>
-                Marche
+              <button onClick={() => setTravelMode("WALKING")} className={`p-3 rounded-lg ${travelMode === "WALKING" ? "bg-red-500" : "bg-gray-300"} text-white`}>
+                <FaWalking size={20} className="inline-block mr-2" /> Marche
               </button>
             </div>
           )}
 
           {showRouteButton && (
-            <button onClick={calculateRoute} className="bg-green-500 text-white p-3 m-4 rounded-lg w-full">
+            <button onClick={calculateRoute} className="bg-green-500 text-white p-3 rounded-lg w-full">
               Afficher l'itinéraire
             </button>
           )}
         </div>
       )}
 
-      <div className="h-[700px] w-full" ref={mapRef}></div>
+      <div className="h-[700px] w-full mt-4" ref={mapRef}></div>
     </div>
   );
 }
