@@ -6,7 +6,7 @@
     "dev": "concurrently \"node server/server.js \" next dev --turbopack",
     "prod": "concurrently \"node server/server.js\" \"next start\"",
     "build": "next build",
-    "start": "next start",
+    "start": "concurrently \"node server/server.js\" \"next start\"",
     "lint": "next lint"
   },
   "dependencies": {
