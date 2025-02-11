@@ -4,43 +4,43 @@ import { Loader } from "@googlemaps/js-api-loader";
 
 export default function GoogleMaps() {
   const mapRef = useRef<HTMLDivElement>(null);
-  const [showInputs, setShowInputs] = useState(false); // Affichage des champs d'adresse
-  const [showRouteButton, setShowRouteButton] = useState(false); // Affichage du bouton "Afficher l'itinéraire"
+  const mapInstance = useRef<google.maps.Map | null>(null);
+  const markerStartRef = useRef<google.maps.Marker | null>(null);
+  const markerDestinationRef = useRef<google.maps.Marker | null>(null);
+  const directionsServiceRef = useRef<google.maps.DirectionsService | null>(null);
+  const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
+
+  const [showInputs, setShowInputs] = useState(false);
+  const [showRouteButton, setShowRouteButton] = useState(false);
   const [addressStart, setAddressStart] = useState("");
   const [addressDestination, setAddressDestination] = useState("");
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  let map: google.maps.Map | null = null;
-  let markerStart: google.maps.Marker | null = null;
-  let markerDestination: google.maps.Marker | null = null;
-  let directionsService: google.maps.DirectionsService | null = null;
-  let directionsRenderer: google.maps.DirectionsRenderer | null = null;
 
   const initializeMap = async (lat: number, lng: number) => {
     try {
       const loader = new Loader({
         apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string,
-        version: "quarterly",
+        version: "weekly",
       });
 
-      const { Map } = await loader.importLibrary("maps");
-      const { Marker } = await loader.importLibrary("marker");
-      const { DirectionsService, DirectionsRenderer } = await loader.importLibrary("routes");
+      await loader.load();
 
       if (mapRef.current) {
-        map = new Map(mapRef.current, {
+        const map = new google.maps.Map(mapRef.current, {
           center: { lat, lng },
           zoom: 14,
         });
 
-        markerStart = new Marker({
+        mapInstance.current = map;
+        markerStartRef.current = new google.maps.Marker({
           position: { lat, lng },
-          map: map,
+          map,
           title: "Votre position",
         });
 
-        directionsService = new DirectionsService();
-        directionsRenderer = new DirectionsRenderer();
-        directionsRenderer.setMap(map);
+        directionsServiceRef.current = new google.maps.DirectionsService();
+        directionsRendererRef.current = new google.maps.DirectionsRenderer();
+        directionsRendererRef.current.setMap(map);
       }
     } catch (error) {
       console.error("Erreur lors de l‘initialisation de la carte :", error);
@@ -56,22 +56,16 @@ export default function GoogleMaps() {
           initializeMap(latitude, longitude);
         },
         () => {
-          initializeMap(45.764043, 4.835659);
+          initializeMap(45.764043, 4.835659); // Lyon par défaut
         }
       );
     } else {
       initializeMap(45.764043, 4.835659);
     }
-
-    return () => {
-      if (map) map = null;
-      if (markerStart) markerStart = null;
-      if (markerDestination) markerDestination = null;
-    };
   }, []);
 
   const handleSearch = async (address: string, isStart: boolean) => {
-    if (!address) return;
+    if (!address || !mapInstance.current) return;
 
     try {
       const response = await fetch(
@@ -84,23 +78,21 @@ export default function GoogleMaps() {
       if (data.status === "OK") {
         const { lat, lng } = data.results[0].geometry.location;
 
-        if (map) {
-          map.setCenter({ lat, lng });
+        mapInstance.current.setCenter({ lat, lng });
 
-          if (isStart) {
-            if (markerStart) markerStart.setPosition({ lat, lng });
-            else markerStart = new google.maps.Marker({ position: { lat, lng }, map, title: "Départ" });
-            setAddressStart(address);
-          } else {
-            if (markerDestination) markerDestination.setPosition({ lat, lng });
-            else markerDestination = new google.maps.Marker({ position: { lat, lng }, map, title: "Destination" });
-            setAddressDestination(address);
-          }
+        if (isStart) {
+          if (markerStartRef.current) markerStartRef.current.setPosition({ lat, lng });
+          else markerStartRef.current = new google.maps.Marker({ position: { lat, lng }, map: mapInstance.current, title: "Départ" });
+          setAddressStart(address);
+        } else {
+          if (markerDestinationRef.current) markerDestinationRef.current.setPosition({ lat, lng });
+          else markerDestinationRef.current = new google.maps.Marker({ position: { lat, lng }, map: mapInstance.current, title: "Destination" });
+          setAddressDestination(address);
+        }
 
-          // Vérifie si les deux adresses sont présentes pour afficher le bouton "Afficher l'itinéraire"
-          if (addressStart && addressDestination) {
-            setShowRouteButton(true);
-          }
+        // Vérifie si les deux adresses sont présentes pour afficher le bouton "Afficher l'itinéraire"
+        if (addressStart && addressDestination) {
+          setShowRouteButton(true);
         }
       } else {
         alert("Adresse introuvable !");
@@ -110,23 +102,8 @@ export default function GoogleMaps() {
     }
   };
 
-  const setMyLocation = (isStart: boolean) => {
-    if (userLocation) {
-      const { lat, lng } = userLocation;
-      if (isStart) {
-        setAddressStart("Ma position");
-        handleSearch(`${lat},${lng}`, true);
-      } else {
-        setAddressDestination("Ma position");
-        handleSearch(`${lat},${lng}`, false);
-      }
-    } else {
-      alert("Localisation non disponible !");
-    }
-  };
-
   const calculateRoute = async () => {
-    if (!addressStart || !addressDestination || !directionsService || !directionsRenderer) return;
+    if (!addressStart || !addressDestination || !directionsServiceRef.current || !directionsRendererRef.current) return;
 
     const request = {
       origin: addressStart === "Ma position" ? userLocation : addressStart,
@@ -134,9 +111,9 @@ export default function GoogleMaps() {
       travelMode: google.maps.TravelMode.DRIVING,
     };
 
-    directionsService.route(request, (result, status) => {
+    directionsServiceRef.current.route(request, (result, status) => {
       if (status === "OK") {
-        directionsRenderer.setDirections(result);
+        directionsRendererRef.current?.setDirections(result);
       } else {
         console.error("Erreur lors du calcul de l'itinéraire :", status);
       }
@@ -154,7 +131,6 @@ export default function GoogleMaps() {
 
       {showInputs && (
         <div>
-          {/* Adresse de départ */}
           <div className="flex gap-2 p-4">
             <input
               type="text"
@@ -166,12 +142,8 @@ export default function GoogleMaps() {
             <button onClick={() => handleSearch(addressStart, true)} className="bg-blue-500 text-white p-2 rounded-lg">
               Rechercher
             </button>
-            <button onClick={() => setMyLocation(true)} className="bg-green-500 text-white p-2 rounded-lg">
-              Ma Position
-            </button>
           </div>
 
-          {/* Adresse de destination */}
           <div className="flex gap-2 p-4">
             <input
               type="text"
@@ -183,14 +155,10 @@ export default function GoogleMaps() {
             <button onClick={() => handleSearch(addressDestination, false)} className="bg-blue-500 text-white p-2 rounded-lg">
               Rechercher
             </button>
-            <button onClick={() => setMyLocation(false)} className="bg-green-500 text-white p-2 rounded-lg">
-              Ma Position
-            </button>
           </div>
 
-          {/* Bouton Afficher l'itinéraire */}
           {showRouteButton && (
-            <button onClick={calculateRoute} className="bg-red-500 text-white p-3 m-4 rounded-lg w-full">
+            <button onClick={calculateRoute} className="bg-green-400 text-white p-3 m-4 rounded-lg w-full">
               Afficher l'itinéraire
             </button>
           )}
