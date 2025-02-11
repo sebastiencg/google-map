@@ -114,10 +114,18 @@ export default function GoogleMaps() {
   const calculateRoute = async () => {
     if (!addressStart || !addressDestination || !directionsServiceRef.current || !directionsRendererRef.current) return;
 
-    const request = {
-      origin: addressStart === "Ma position" ? userLocation : addressStart,
-      destination: addressDestination === "Ma position" ? userLocation : addressDestination,
-      travelMode: window.google.maps.TravelMode[travelMode as keyof typeof google.maps.TravelMode],
+    const origin = addressStart === "Ma position" && userLocation ? userLocation : addressStart;
+    const destination = addressDestination === "Ma position" && userLocation ? userLocation : addressDestination;
+
+    if (!origin || !destination) {
+      console.error("Origin or destination is null");
+      return;
+    }
+
+    const request: google.maps.DirectionsRequest = {
+      origin: typeof origin === "string" ? origin : new google.maps.LatLng(origin.lat, origin.lng),
+      destination: typeof destination === "string" ? destination : new google.maps.LatLng(destination.lat, destination.lng),
+      travelMode: google.maps.TravelMode[travelMode as keyof typeof google.maps.TravelMode],
     };
 
     directionsServiceRef.current.route(request, (result, status) => {
@@ -135,13 +143,13 @@ export default function GoogleMaps() {
   };
 
   useEffect(() => {
-    const newSocket = io("https://https://google-map.miantsebastien.com/");
-
+    const newSocket = io("https://google-map.miantsebastien.com/");
+    //const newSocket = io("http://localhost:4000/");
     newSocket.on("connect", () => {
       console.log("Connecté à Socket.IO :", newSocket.id);
       currentUserId.current = newSocket.id;
 
-      if (userLocation) {
+      if (userLocation) {google-map.miantsebastien.com
         newSocket.emit("location", { location: userLocation });
       }
     });
