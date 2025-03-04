@@ -182,8 +182,8 @@ export default function GoogleMaps() {
   };
 
   useEffect(() => {
-    //const socketRef.current = io("https://google-map.miantsebastien.com/");
-    socketRef.current = io("http://localhost:4000/");
+    socketRef.current = io("https://google-map.miantsebastien.com/");
+    //socketRef.current = io("http://localhost:4000/");
     socketRef.current.on("connect", () => {
       console.log("Connecté à Socket.IO :", socketRef.current?.id);
       if (socketRef.current?.id) {
