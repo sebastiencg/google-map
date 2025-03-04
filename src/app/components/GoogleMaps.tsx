@@ -197,6 +197,7 @@ export default function GoogleMaps() {
       }
     });
 
+
     socketRef.current.on("userList", (userList: { id: string; location: { lat: number; lng: number } }[]) => {
       if (mapInstance.current) {
         userList.forEach((user: { id: string; location: { lat: number; lng: number } }, index) => {
