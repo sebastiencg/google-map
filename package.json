@@ -4,13 +4,14 @@
   "private": true,
   "scripts": {
     "dev": "concurrently \"node server/server.js \" next dev --turbopack",
-    "prod": "concurrently \"node server/server.js\" \"next start\"",
+    "prod": "npm run build && concurrently \"node server/server.js\" \"next start\"",
     "build": "next build",
     "start": "concurrently \"node server/server.js\" \"next start\"",
     "lint": "next lint"
   },
   "dependencies": {
     "@googlemaps/react-wrapper": "^1.1.42",
+    "axios": "^1.8.1",
     "express": "^4.21.2",
     "https-localhost": "^4.7.1",
     "next": "15.1.6",

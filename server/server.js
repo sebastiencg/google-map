@@ -10,34 +10,47 @@ const io = new Server(server, {
   },
 });
 
-let users = []; // Tableau pour stocker les utilisateurs connectés
+let users = []; // Liste des utilisateurs connectés
+let routes = {}; // Stocke les trajets (id utilisateur => trajet)
 
+// Lorsqu'un client se connecte
 io.on("connection", (socket) => {
-  console.log("Nouvel utilisateur connecté :", socket.id);
+  console.log("Nouvel utilisateur connecté  guy:", socket.id);
+  users.push({ id: socket.id });
 
-  // Lorsqu'un utilisateur envoie sa position
+  // Écoute de la position de l'utilisateur
   socket.on("location", (data) => {
     const existingUserIndex = users.findIndex((user) => user.id === socket.id);
 
     if (existingUserIndex !== -1) {
-      // Mettre à jour la position si l'utilisateur existe déjà
       users[existingUserIndex].location = data.location;
     } else {
-      // Ajouter un nouvel utilisateur dans la liste
       users.push({ id: socket.id, location: data.location });
     }
 
-    // Diffuser la liste complète des utilisateurs à tous les clients
+    // Diffuser la liste des utilisateurs
     io.emit("userList", users);
   });
 
-  // Lorsqu'un utilisateur se déconnecte
+  // Écoute d'un nouvel itinéraire
+  socket.on("newRoute", (data) => {
+    console.log(`Trajet reçu de ${socket.id}`);
+
+    if (data.route) {
+      routes[socket.id] = data.route; // Stocker le trajet
+
+      // Diffuser le trajet à tous les autres utilisateurs
+      socket.broadcast.emit("receiveRoute", { id: socket.id, route: data.route });
+    }
+  });
+
+  // Gestion de la déconnexion
   socket.on("disconnect", () => {
     console.log("Utilisateur déconnecté :", socket.id);
-    users = users.filter((user) => user.id !== socket.id); // Supprimer l'utilisateur du tableau
+    users = users.filter((user) => user.id !== socket.id);
+    delete routes[socket.id]; // Supprimer son trajet
 
-    // Diffuser la liste mise à jour des utilisateurs à tous les clients
-
+    // Diffuser la mise à jour des utilisateurs et des trajets
     io.emit("userList", users);
   });
 });

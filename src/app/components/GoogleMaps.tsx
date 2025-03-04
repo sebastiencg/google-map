@@ -2,12 +2,21 @@
 import { useEffect, useRef, useState } from "react";
 import { Loader } from "@googlemaps/js-api-loader";
 import { FaBicycle, FaCar, FaWalking } from "react-icons/fa";
-import { io } from "socket.io-client";
+import axios from 'axios';
+import { io, Socket } from "socket.io-client";
+
+// Interface pour un trajet reçu via Socket.IO
+interface RouteData {
+  id: string;
+  route: google.maps.DirectionsResult;
+}
+
 
 export default function GoogleMaps() {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<google.maps.Map | null>(null);
   const userMarkers = useRef<{ [id: string]: google.maps.Marker }>({});
+  const userRoutes = useRef<{ [id: string]: google.maps.DirectionsRenderer }>({});
   const markerStartRef = useRef<google.maps.Marker | null>(null);
   const markerDestinationRef = useRef<google.maps.Marker | null>(null);
   const directionsServiceRef = useRef<google.maps.DirectionsService | null>(null);
@@ -20,6 +29,7 @@ export default function GoogleMaps() {
   const [addressStart, setAddressStart] = useState("");
   const [addressDestination, setAddressDestination] = useState("");
   const [travelMode, setTravelMode] = useState<string>("DRIVING");
+  const socketRef = useRef<Socket >(null);
 
   const initializeMap = async (lat: number, lng: number) => {
     try {
@@ -56,13 +66,33 @@ export default function GoogleMaps() {
           initializeMap(latitude, longitude);
         },
         () => {
-          initializeMap(45.764043, 4.835659); // Lyon par défaut
+          fetchIp();
         }
       );
     } else {
-      initializeMap(45.764043, 4.835659);
+      fetchIp();
     }
   }, []);
+
+  const fetchIp = async () => {
+    try {
+      const response = await axios.get('https://ipwhois.app/json/');
+      const lat: number = response.data.latitude;
+      const lng :number = response.data.longitude;
+      setUserLocation({ lat: lat, lng: lng });
+      await initializeMap(lat, lng)
+
+
+      return true
+    } catch (error) {
+      setUserLocation({ lat: 45.764043, lng: 4.835659 });
+
+      initializeMap(45.764043, 4.835659);
+
+      console.error("Impossible de récupérer l'adresse IP", error);
+      return false;
+    }
+  };
 
   const handleSearch = async (address: string, isStart: boolean) => {
     if (!address || !mapInstance.current || !window.google) return;
@@ -131,34 +161,43 @@ export default function GoogleMaps() {
     directionsServiceRef.current.route(request, (result, status) => {
       if (status === "OK") {
         directionsRendererRef.current?.setDirections(result);
+        console.log("ici 1")
+
+        // Envoyer le trajet au serveur via Socket.IO
+        console.log(socketRef);
+        if (socketRef.current) {
+          console.log("ici 2")
+
+          socketRef.current.emit("newRoute", {
+            id: currentUserId.current,
+            route: result,
+          });
+        }
+        console.log("ici 3")
+
       } else {
         console.error("Erreur lors du calcul de l'itinéraire :", status);
       }
     });
   };
 
-  const adjustCoordinates = (lat: number, lng: number, index: number) => {
-    const offset = 0.00005 * index;
-    return { lat: lat + offset, lng: lng + offset };
-  };
-
   useEffect(() => {
-    const newSocket = io("https://google-map.miantsebastien.com/");
-    //const newSocket = io("http://localhost:4000/");
-    newSocket.on("connect", () => {
-      console.log("Connecté à Socket.IO :", newSocket.id);
-      if (newSocket.id) {
-        currentUserId.current = newSocket.id;
+    //const socketRef.current = io("https://google-map.miantsebastien.com/");
+    socketRef.current = io("http://localhost:4000/");
+    socketRef.current.on("connect", () => {
+      console.log("Connecté à Socket.IO :", socketRef.current?.id);
+      if (socketRef.current?.id) {
+        currentUserId.current = socketRef.current.id;
       } else {
         currentUserId.current = null;
       }
 
       if (userLocation) {
-        newSocket.emit("location", { location: userLocation });
+        socketRef.current?.emit("location", { location: userLocation });
       }
     });
 
-    newSocket.on("userList", (userList: { id: string; location: { lat: number; lng: number } }[]) => {
+    socketRef.current.on("userList", (userList: { id: string; location: { lat: number; lng: number } }[]) => {
       if (mapInstance.current) {
         userList.forEach((user: { id: string; location: { lat: number; lng: number } }, index) => {
           const adjustedLocation = adjustCoordinates(user.location.lat, user.location.lng, index);
@@ -179,10 +218,38 @@ export default function GoogleMaps() {
       }
     });
 
+    // Écouter les trajets des autres utilisateurs
+    socketRef.current?.on("receiveRoute", (data: RouteData) => {
+      if (!mapInstance.current || !window.google || !data.route) return;
+
+      if (userRoutes.current[data.id]) {
+        userRoutes.current[data.id]?.setDirections(data.route);
+      } else {
+        const newDirectionsRenderer = new window.google.maps.DirectionsRenderer({
+          map: mapInstance.current,
+          polylineOptions: {
+            strokeColor: getRandomColor(),
+            strokeWeight: 5,
+          },
+        });
+
+        newDirectionsRenderer.setDirections(data.route);
+        userRoutes.current[data.id] = newDirectionsRenderer;
+      }
+    });
+
     return () => {
-      newSocket.close();
+      if (socketRef.current) socketRef.current.disconnect();
     };
   }, [userLocation]);
+
+  const adjustCoordinates = (lat: number, lng: number, index: number) => {
+    const offset = 0.00005 * index;
+    return { lat: lat + offset, lng: lng + offset };
+  };
+  const getRandomColor = () => {
+    return `#${Math.floor(Math.random() * 16777215).toString(16)}`;
+  };
 
   return (
     <div className="p-4">
