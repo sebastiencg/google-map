@@ -195,6 +195,7 @@ export default function GoogleMaps() {
       if (userLocation) {
         socketRef.current?.emit("location", { location: userLocation });
       }
+
     });
 
 
@@ -212,6 +213,7 @@ export default function GoogleMaps() {
               icon: {
                 url: "https://cdn-icons-png.flaticon.com/512/1946/1946429.png",
                 scaledSize: new window.google.maps.Size(40, 40),
+                fillColor: getRandomColor(),
               },
             });
           }
@@ -322,4 +324,3 @@ export default function GoogleMaps() {
     </div>
   );
 }
-

@@ -6,7 +6,8 @@
   <component name="ChangeListManager">
     <list default="true" id="8bb895fa-e9a3-41b1-baa7-6f9137ecd78d" name="Changes" comment="projet google map">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/server.js" beforeDir="false" afterPath="$PROJECT_DIR$/server/server.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/components/GoogleMaps.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/components/GoogleMaps.tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -37,22 +38,22 @@
     &quot;assignee&quot;: &quot;sebastiencg&quot;
   }
 }</component>
-  <component name="GitLabMergeRequestFiltersHistory"><![CDATA[{
-  "lastFilter": {
-    "state": "OPENED",
-    "assignee": {
-      "type": "org.jetbrains.plugins.gitlab.mergerequest.ui.filters.GitLabMergeRequestsFiltersValue.MergeRequestsMemberFilterValue.MergeRequestsAssigneeFilterValue",
-      "username": "sebastien-cg",
-      "fullname": "sebastien guy miantama"
+  <component name="GitLabMergeRequestFiltersHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPENED&quot;,
+    &quot;assignee&quot;: {
+      &quot;type&quot;: &quot;org.jetbrains.plugins.gitlab.mergerequest.ui.filters.GitLabMergeRequestsFiltersValue.MergeRequestsMemberFilterValue.MergeRequestsAssigneeFilterValue&quot;,
+      &quot;username&quot;: &quot;sebastien-cg&quot;,
+      &quot;fullname&quot;: &quot;sebastien guy miantama&quot;
     }
   }
-}]]></component>
-  <component name="GitLabMergeRequestsSettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "first": "http://100.106.224.109:8081/sebastien-cg/google-map",
-    "second": "cb072e56-f08c-4bb4-831e-5f9357df569f"
+}</component>
+  <component name="GitLabMergeRequestsSettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;first&quot;: &quot;http://100.106.224.109:8081/sebastien-cg/google-map&quot;,
+    &quot;second&quot;: &quot;cb072e56-f08c-4bb4-831e-5f9357df569f&quot;
   }
-}]]></component>
+}</component>
   <component name="GithubPullRequestsUISettings">{
   &quot;selectedUrlAndAccountId&quot;: {
     &quot;url&quot;: &quot;https://github.com/sebastiencg/google-map&quot;,
@@ -147,7 +148,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-js-predefined-d6986cc7102b-822845ee3bb5-JavaScript-WS-243.23654.157" />
+        <option value="bundled-js-predefined-d6986cc7102b-1632447f56bf-JavaScript-WS-243.26053.12" />
       </set>
     </attachedChunks>
   </component>
@@ -166,6 +167,8 @@
       <workItem from="1739261847715" duration="24758000" />
       <workItem from="1739349014988" duration="8000" />
       <workItem from="1739435354888" duration="18000" />
+      <workItem from="1742285656047" duration="797000" />
+      <workItem from="1742286708114" duration="10503000" />
     </task>
     <task id="LOCAL-00001" summary="projet giigle map">
       <option name="closed" value="true" />
@@ -332,5 +335,17 @@
     <MESSAGE value="projet giigle map" />
     <MESSAGE value="projet google map" />
     <option name="LAST_COMMIT_MESSAGE" value="projet google map" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="javascript">
+          <url>file://$PROJECT_DIR$/server/server.js</url>
+          <line>50</line>
+          <properties lambdaOrdinal="-1" />
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

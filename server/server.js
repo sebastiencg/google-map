@@ -17,6 +17,9 @@ let routes = {}; // Stocke les trajets (id utilisateur => trajet)
 io.on("connection", (socket) => {
   console.log("Nouvel utilisateur connecté  guy:", socket.id);
   users.push({ id: socket.id });
+  // Diffuser la liste des utilisateurs
+  io.emit("userList", users);
+  socket.broadcast.emit("receiveRoute", { id: socket.id, route: data.route });
 
   // Écoute de la position de l'utilisateur
   socket.on("location", (data) => {
