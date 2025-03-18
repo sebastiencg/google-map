@@ -11,6 +11,10 @@ interface RouteData {
   route: google.maps.DirectionsResult;
 }
 
+interface User {
+  id: string;
+  location: { lat: number; lng: number };
+}
 
 export default function GoogleMaps() {
   const mapRef = useRef<HTMLDivElement>(null);
@@ -32,7 +36,7 @@ export default function GoogleMaps() {
   const socketRef = useRef<Socket >(null);
 
 // 1. Ajoute un buffer pour stocker temporairement les users
-  const pendingUsers = useRef([]);
+  const pendingUsers = useRef<User[]>([]);
 
   const initializeMap = async (lat: number, lng: number) => {
     try {
@@ -233,32 +237,6 @@ export default function GoogleMaps() {
       // Sinon traitement normal
       handleUserList(userList);
     });
-    const handleUserList = (userList) => {
-      userList.forEach((user, index) => {
-        if (user.id === socketRef.current?.id) return; // Skip moi-même
-        if (!user.location) return;
-
-        const adjustedLocation = adjustCoordinates(user.location.lat, user.location.lng, index);
-
-        if (userMarkers.current[user.id]) {
-          userMarkers.current[user.id].setPosition(adjustedLocation);
-        } else {
-          userMarkers.current[user.id] = new window.google.maps.Marker({
-            position: adjustedLocation,
-            map: mapInstance.current,
-            title: `Utilisateur ${user.id}`,
-            icon: {
-              path: window.google.maps.SymbolPath.CIRCLE,
-              fillColor: getRandomColor(),
-              fillOpacity: 1,
-              scale: 10,
-              strokeColor: "#000",
-              strokeWeight: 1,
-            },
-          });
-        }
-      });
-    };
 
 
     // Écouter les trajets des autres utilisateurs
@@ -293,6 +271,32 @@ export default function GoogleMaps() {
       if (socketRef.current) socketRef.current.disconnect();
     };
   }, []);
+  const handleUserList = (userList:User[]) => {
+    userList.forEach((user, index) => {
+      if (user.id === socketRef.current?.id) return; // Skip moi-même
+      if (!user.location) return;
+
+      const adjustedLocation = adjustCoordinates(user.location.lat, user.location.lng, index);
+
+      if (userMarkers.current[user.id]) {
+        userMarkers.current[user.id].setPosition(adjustedLocation);
+      } else {
+        userMarkers.current[user.id] = new window.google.maps.Marker({
+          position: adjustedLocation,
+          map: mapInstance.current,
+          title: `Utilisateur ${user.id}`,
+          icon: {
+            path: window.google.maps.SymbolPath.CIRCLE,
+            fillColor: getRandomColor(),
+            fillOpacity: 1,
+            scale: 10,
+            strokeColor: "#000",
+            strokeWeight: 1,
+          },
+        });
+      }
+    });
+  };
 
   useEffect(() => {
     if (socketRef.current && userLocation) {
