@@ -1,4 +1,5 @@
 #!/bin/bash
+# chmod +x deploy.sh (pour donne les droit d'execution du script)
 
 echo "🚀 Déploiement Node.js + PM2 en cours..."
 
