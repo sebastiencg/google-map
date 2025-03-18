@@ -31,6 +31,9 @@ export default function GoogleMaps() {
   const [travelMode, setTravelMode] = useState<string>("DRIVING");
   const socketRef = useRef<Socket >(null);
 
+// 1. Ajoute un buffer pour stocker temporairement les users
+  const pendingUsers = useRef([]);
+
   const initializeMap = async (lat: number, lng: number) => {
     try {
       const loader = new Loader({
@@ -48,14 +51,40 @@ export default function GoogleMaps() {
 
         mapInstance.current = map;
 
+        // Ton marker utilisateur ici
+        if (!markerStartRef.current) {
+          markerStartRef.current = new window.google.maps.Marker({
+            position: { lat, lng },
+            map: map,
+            title: "Moi",
+            icon: {
+              path: window.google.maps.SymbolPath.CIRCLE,
+              fillColor: "#4285F4",
+              fillOpacity: 1,
+              scale: 10,
+              strokeColor: "#000",
+              strokeWeight: 1,
+            },
+          });
+        } else {
+          markerStartRef.current.setPosition({ lat, lng });
+        }
+
         directionsServiceRef.current = new window.google.maps.DirectionsService();
         directionsRendererRef.current = new window.google.maps.DirectionsRenderer();
         directionsRendererRef.current.setMap(map);
+
+        // ➡️ Dès que la map est prête, on traite le buffer s'il y a des users stockés
+        if (pendingUsers.current.length > 0) {
+          handleUserList(pendingUsers.current);
+          pendingUsers.current = [];
+        }
       }
     } catch (error) {
       console.error("Erreur lors de l‘initialisation de la carte :", error);
     }
   };
+
 
   useEffect(() => {
     if ("geolocation" in navigator) {
@@ -161,19 +190,16 @@ export default function GoogleMaps() {
     directionsServiceRef.current.route(request, (result, status) => {
       if (status === "OK") {
         directionsRendererRef.current?.setDirections(result);
-        console.log("ici 1")
 
         // Envoyer le trajet au serveur via Socket.IO
         console.log(socketRef);
         if (socketRef.current) {
-          console.log("ici 2")
 
           socketRef.current.emit("newRoute", {
             id: currentUserId.current,
             route: result,
           });
         }
-        console.log("ici 3")
 
       } else {
         console.error("Erreur lors du calcul de l'itinéraire :", status);
@@ -182,8 +208,8 @@ export default function GoogleMaps() {
   };
 
   useEffect(() => {
-    socketRef.current = io("https://google-map.miantsebastien.com/");
-    //socketRef.current = io("http://localhost:4000/");
+    //socketRef.current = io("https://google-map.miantsebastien.com/");
+    socketRef.current = io("http://localhost:4000/");
     socketRef.current.on("connect", () => {
       console.log("Connecté à Socket.IO :", socketRef.current?.id);
       if (socketRef.current?.id) {
@@ -192,34 +218,48 @@ export default function GoogleMaps() {
         currentUserId.current = null;
       }
 
-      if (userLocation) {
-        socketRef.current?.emit("location", { location: userLocation });
-      }
 
     });
 
 
-    socketRef.current.on("userList", (userList: { id: string; location: { lat: number; lng: number } }[]) => {
-      if (mapInstance.current) {
-        userList.forEach((user: { id: string; location: { lat: number; lng: number } }, index) => {
-          const adjustedLocation = adjustCoordinates(user.location.lat, user.location.lng, index);
-          if (userMarkers.current[user.id]) {
-            userMarkers.current[user.id].setPosition(adjustedLocation);
-          } else {
-            userMarkers.current[user.id] = new window.google.maps.Marker({
-              position: adjustedLocation,
-              map: mapInstance.current,
-              title: `Utilisateur ${user.id}`,
-              icon: {
-                url: "https://cdn-icons-png.flaticon.com/512/1946/1946429.png",
-                scaledSize: new window.google.maps.Size(40, 40),
-                fillColor: getRandomColor(),
-              },
-            });
-          }
-        });
+
+    socketRef.current.on("userList", (userList) => {
+      if (!mapInstance.current) {
+        // La map n'est pas prête, on stocke la userList
+        pendingUsers.current = userList;
+        return;
       }
+
+      // Sinon traitement normal
+      handleUserList(userList);
     });
+    const handleUserList = (userList) => {
+      userList.forEach((user, index) => {
+        if (user.id === socketRef.current?.id) return; // Skip moi-même
+        if (!user.location) return;
+
+        const adjustedLocation = adjustCoordinates(user.location.lat, user.location.lng, index);
+
+        if (userMarkers.current[user.id]) {
+          userMarkers.current[user.id].setPosition(adjustedLocation);
+        } else {
+          userMarkers.current[user.id] = new window.google.maps.Marker({
+            position: adjustedLocation,
+            map: mapInstance.current,
+            title: `Utilisateur ${user.id}`,
+            icon: {
+              path: window.google.maps.SymbolPath.CIRCLE,
+              fillColor: getRandomColor(),
+              fillOpacity: 1,
+              scale: 10,
+              strokeColor: "#000",
+              strokeWeight: 1,
+            },
+          });
+        }
+      });
+    };
+
 
     // Écouter les trajets des autres utilisateurs
     socketRef.current?.on("receiveRoute", (data: RouteData) => {
@@ -241,9 +281,23 @@ export default function GoogleMaps() {
       }
     });
 
+    socketRef.current.on("userDisconnected", ({ id }) => {
+      if (userMarkers.current[id]) {
+        userMarkers.current[id].setMap(null); // Supprime le marker
+        delete userMarkers.current[id]; // Nettoie la ref
+      }
+    });
+
+
     return () => {
       if (socketRef.current) socketRef.current.disconnect();
     };
+  }, []);
+
+  useEffect(() => {
+    if (socketRef.current && userLocation) {
+      socketRef.current.emit("location", { location: userLocation });
+    }
   }, [userLocation]);
 
   const adjustCoordinates = (lat: number, lng: number, index: number) => {
